@@ -45,6 +45,7 @@ body {
 
 .well {
     background-color: #f2f2f2;
+    max-width: 580px;
     border: 1px solid #ccc;
     padding: 1em;
     min-height: 200px;
