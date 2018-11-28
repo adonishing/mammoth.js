@@ -143,7 +143,7 @@ function DocumentConversion(options, comments) {
     
     var referencedComments = [];
     
-    options = _.extend({ignoreEmptyParagraphs: false}, options); // 忽略空段落改为false
+    options = _.extend({ignoreEmptyParagraphs: false}, options);     // 修改：不忽略空段
     var idPrefix = options.idPrefix === undefined ? "" : options.idPrefix;
     var ignoreEmptyParagraphs = options.ignoreEmptyParagraphs;
     
@@ -154,7 +154,7 @@ function DocumentConversion(options, comments) {
     function convertToHtml(document) {
         var messages = [];
         
-        var html = elementToHtml(document, messages, {});   // html是有属性，tag信息的json
+        var html = elementToHtml(document, messages, {});   // 注释： 现在的html是有属性，tag信息的json
         var deferredNodes = [];
         walkHtml(html, function(node) {
             if (node.type === "deferred") {
@@ -201,7 +201,6 @@ function DocumentConversion(options, comments) {
         if (!options) {
             throw new Error("options not set");
         }
-
         var handler = elementConverters[element.type];
         if (handler) {
             return handler(element, messages, options);
@@ -213,11 +212,10 @@ function DocumentConversion(options, comments) {
     function convertParagraph(element, messages, options) {
         return htmlPathForParagraph(element, messages).wrap(function() {
             var content = convertElements(element.children, messages, options);
-            
             if (ignoreEmptyParagraphs) {
                 return content;
             } else {
-                return [Html.forceWrite].concat(content);  
+                return [Html.forceWrite].concat(content);
             }
         });
     }
@@ -481,8 +479,8 @@ function DocumentConversion(options, comments) {
         "tab": function(element, messages, options) {
             return [Html.text("\t")];
         },
-
         /**
+         * 修改：
          * 用于将oMath元素的信息放到一个img元素，等加载完后由onload函数处理。
          * 主要信息在element.content中，由mammoth的document元素转成的json 
          * @param {*} element 在readOmml中生成的对象
@@ -531,6 +529,7 @@ function DocumentConversion(options, comments) {
                 Html.freshElement("a", {href: "#" + noteRefHtmlId(element)}, [Html.text("↑")])
             ]);
             var body = children.concat([backLink]);
+            
             return Html.freshElement("li", {id: noteHtmlId(element)}, body);
         },
         "commentReference": convertCommentReference,
@@ -660,6 +659,7 @@ var verticalAlignment = {
     subscript: "subscript"
 };
 
+// 修改：添加oMath文档类型用于生成omml=>mathml
 var oMathId = 0;
 /**
  * 用于生成oMath type的对象，以供后面处理成html元素
@@ -667,9 +667,9 @@ var oMathId = 0;
 function OMath(element){
     return {
         type: 'oMath',
-        id: 'oMathId'+ oMathId++,
+        id: 'oMathId' + oMathId++,
         content: JSON.stringify(element)
-    }
+    };
 }
 
 function Text(value) {
@@ -854,7 +854,7 @@ function BodyReader(options) {
     var numbering = options.numbering;
     var styles = options.styles;
 
-    var numberingPool = {};
+    var numberingPool = {};     // 修改：用于记录序号
 
     function readXmlElements(elements) {
         var results = elements.map(readXmlElement);
@@ -999,30 +999,38 @@ function BodyReader(options) {
         return readXmlElements(element.children);
     }
     
+    var NUM_TEXT = {
+        "decimal": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49],
+        "upperLetter": ["", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"],
+        "japaneseCounting": ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "一十一", "一十二", "一十三", "一十四", "一十五", "一十六", "一十七", "一十八", "一十九", "二十", "二十一", "二十二", "二十三", "二十四", "二十五", "二十六", "二十七", "二十八", "二十九"],
+        "chineseCounting": ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "一十一", "一十二", "一十三", "一十四", "一十五", "一十六", "一十七", "一十八", "一十九", "二十", "二十一", "二十二", "二十三", "二十四", "二十五", "二十六", "二十七", "二十八", "二十九"],
+        "upperRoman": ["O", "Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ", "Ⅵ", "Ⅶ", "Ⅷ", "Ⅸ", "Ⅹ", "Ⅺ", "Ⅻ", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX", "XXI", "XXII", "XXIII", "XXIV", "XXV", "XXVI", "XXVII", "XXVIII", "XXIX", "XXX"]
+    };
+
     var xmlElementReaders = {
         "w:p": function(element) {
-            var p = readXmlElements(element.children)
-            .map(function(children) {
-                var properties = _.find(children, isParagraphProperties);
-                return new documents.Paragraph(
-                    children.filter(negate(isParagraphProperties)),
-                    properties
-                );
-            })
-            .insertExtra();
-            
+            var p =  readXmlElements(element.children)
+                .map(function(children) {
+                    var properties = _.find(children, isParagraphProperties);
+                    return new documents.Paragraph(
+                        children.filter(negate(isParagraphProperties)),
+                        properties
+                    );
+                })
+                .insertExtra();
+
             if (p.value.numbering){
                 var numId = p.value.numbering.abstractNumId;
                 var level = p.value.numbering.level;
                 var numKey = numId + ':' + level;
 
-                var start = parseInt(p.value.numbering.start);
+                var start = parseInt(p.value.numbering.start, 10);
 
                 var numIdx = start;
-                if(numberingPool.hasOwnProperty(numKey)){
+                if (numberingPool.hasOwnProperty(numKey)){
                     numberingPool[numKey] += 1;
-                    numIdx = numberingPool[numKey]
-                }else{
+                    numIdx = numberingPool[numKey];
+                } else {
                     numberingPool[numKey] = numIdx;
                 }
 
@@ -1044,10 +1052,10 @@ function BodyReader(options) {
             }
             // console.log(p);
 
-            return p
+            return p;
         },
         "w:pPr": function(element) {
-            var ps = readParagraphStyle(element).map(function(style) {
+            return readParagraphStyle(element).map(function(style) {
                 return {
                     type: "paragraphProperties",
                     styleId: style.styleId,
@@ -1057,9 +1065,6 @@ function BodyReader(options) {
                     indent: readParagraphIndent(element.firstOrEmpty("w:ind"))
                 };
             });
-            // console.log(ps);
-
-            return ps
         },
         "w:r": function(element) {
             return readXmlElements(element.children)
@@ -1320,6 +1325,7 @@ function BodyReader(options) {
         }
     }
     
+    
     function readOLEData(element) {
         var relationshipId = element.attributes['r:id'];
         
@@ -1346,13 +1352,14 @@ function BodyReader(options) {
     }
     
     /**
+     * 修改：
      * mammoth会调用该函数处理omml的对象，返回的结果会被生成html元素的oMath函数使用
      * @param oMath, mammoth用sax生成的对象
      * @return 包装好oMath信息的object。
      */
     function readOmml(oMath){
         var element = documents.OMath(oMath);
-        var result = elementResultWithMessages(element,[]);
+        var result = elementResultWithMessages(element, []);
         return result;
     }
 
@@ -1490,46 +1497,8 @@ ReadResult.prototype.flatMap = function(func) {
     return new ReadResult(result.value.element, joinElements(this.extra, result.value.extra), result.messages);
 };
 
-var NUM_TEXT = {
-    'decimal': [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49],
-    'upperLetter': ['', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
-    'japaneseCounting': ["零", "一","二","三","四","五","六","七","八","九","十","一十一","一十二","一十三","一十四","一十五","一十六","一十七","一十八","一十九","二十","二十一","二十二","二十三","二十四","二十五","二十六","二十七","二十八","二十九"],
-    'upperRoman': ["O", "Ⅰ","Ⅱ","Ⅲ","Ⅳ","Ⅴ","Ⅵ","Ⅶ","Ⅷ","Ⅸ","Ⅹ","Ⅺ","Ⅻ","XIII","XIV","XV","XVI","XVII","XVIII","XIX","XX","XXI","XXII","XXIII","XXIV","XXV","XXVI","XXVII","XXVIII","XXIX","XXX"]
-}
-
 function combineResults(results) {
     var result = Result.combine(_.pluck(results, "_result"));
-
-    // 序号
-    // var listValue = result.value.filter(function(oneValue){
-    //     // console.log(oneValue)
-    //     return oneValue.element.styleName && oneValue.element.styleName === 'List Paragraph'
-    // })
-    // if(listValue.length > 1){
-    //     var groups = _.groupBy(listValue, function(oneValue){
-    //         return oneValue.element.numbering.abstractNumId + ':' + oneValue.element.numbering.level
-    //     })
-
-    //     _.mapObject(groups, function(group){
-    //         group.forEach(function(oneValue, i){
-    //             var numFmt = oneValue.element.numbering.numFmt;
-    //             var lvlText = oneValue.element.numbering.lvlText;
-    //             var start = parseInt(oneValue.element.numbering.start);
-    //             // console.log(i, start)
-    //             var txt = NUM_TEXT[numFmt][i+start];
-    //             var formatTxt = lvlText.replace('%1', txt);
-    //             var numEle = documents.Text(formatTxt);
-    //             // console.log(oneValue);
-    //             var numRun = documents.Run([numEle], oneValue.element.children[0]);
-    //             oneValue.element.children.unshift(numRun);
-
-    //             oneValue.element.numbering = null;
-    //             oneValue.element.styleName = null;
-    //             oneValue.element.styleId = null;
-    //         })
-    //     })
-    // }
-    // console.log('changed result', result.value);
     return new ReadResult(
         _.flatten(_.pluck(result.value, "element")),
         _.filter(_.flatten(_.pluck(result.value, "extra")), identity),
@@ -1953,10 +1922,10 @@ function readAbstractNum(element) {
     element.getElementsByTagName("w:lvl").forEach(function(levelElement) {
         var levelIndex = levelElement.attributes["w:ilvl"];
         var numFmt = levelElement.first("w:numFmt").attributes["w:val"];
-        var lvlText = levelElement.first("w:lvlText").attributes["w:val"];
-        var start = levelElement.first("w:start").attributes["w:val"];
+        var lvlText = levelElement.first("w:lvlText").attributes["w:val"];  // 修改： 增加了读取序号文本模板
+        var start = levelElement.first("w:start").attributes["w:val"];  // 修改： 增加了读取开始序号
         levels[levelIndex] = {
-            abstractNumId: element.attributes["w:abstractNumId"],
+            abstractNumId: element.attributes["w:abstractNumId"],  // 修改： 增加了读取序号ID
             isOrdered: numFmt !== "bullet",
             level: levelIndex,
             numFmt: numFmt, lvlText: lvlText, start: start
@@ -1971,7 +1940,7 @@ function readNums(root, abstractNums) {
         var id = element.attributes["w:numId"];
         var abstractNumId = element.first("w:abstractNumId").attributes["w:val"];
         nums[id] = abstractNums[abstractNumId];
-        nums[id].numId = id;
+        nums[id].numId = id;        // 修改：增加了id
     });
     return nums;
 }
@@ -1996,8 +1965,8 @@ var xmlNamespaceMap = {
     "urn:schemas-microsoft-com:vml": "v",
     "http://schemas.openxmlformats.org/markup-compatibility/2006": "mc",
     "urn:schemas-microsoft-com:office:word": "office-word",
-    "http://schemas.openxmlformats.org/officeDocument/2006/math": "m",  // wprd 07 omml element
-    "urn:schemas-microsoft-com:office:office": "o"  // word 97 mathtype binary file
+    "http://schemas.openxmlformats.org/officeDocument/2006/math": "m",  // 修改： 增加了 wprd 07 omml element
+    "urn:schemas-microsoft-com:office:office": "o"  // 修改： 增加了 word 97 mathtype binary file
 };
 
 
