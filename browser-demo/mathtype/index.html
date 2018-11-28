@@ -1,0 +1,164 @@
+<html>
+
+<head>
+   <script src="mathtype/cfb.js"></script>
+</head>
+
+<body>
+   <div id="container"></div>
+   <script>
+      var oleB64 = "0M8R4KGxGuEAAAAAAAAAAAAAAAAAAAAAPgADAP7/CQAGAAAAAAAAAAAAAAABAAAAAQAAAAAAAAAAEAAAAgAAAAEAAAD+////AAAAAAAAAAD////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////9////BAAAAP7////+/////v///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////1IAbwBvAHQAIABFAG4AdAByAHkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWAAUA//////////8CAAAAA84CAAAAAADAAAAAAAAARgAAAAAAAAAAAAAAADAirPPs69MBAwAAAAACAAAAAAAAAQBPAGwAZQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAoAAgH///////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFAAAAAAAAAABAEMAbwBtAHAATwBiAGoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEgACAQEAAAADAAAA/////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAABpAAAAAAAAAAMATwBiAGoASQBuAGYAbwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASAAIB/////wQAAAD/////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwAAAAYAAAAAAAAA/v///wIAAAD+/////v///wUAAAAGAAAABwAAAP7///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8BAAACCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQD+/wMKAAD/////A84CAAAAAADAAAAAAAAARhYAAABNYXRoVHlwZSA2LjAgRXF1YXRpb24ADAAAAE1hdGhUeXBlIEVGAA8AAABFcXVhdGlvbi5EU01UNAD0ObJxAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHAAAAAIA5cPiAAAAbACGAADHVAAAAAAADACGAAUBAAYJRFNNVDYAABNXaW5BbGxCYXNpY0NvZGVQYWdlcwARBVRpbWVzIE5ldyBSb21hbgARA1N5bWJvbAARBUNvdXJpZXIgTmV3ABEETVQgRXh0cmEAE1dpbkFsbENvZGVQYWdlcwARBsvOzOUAEgAIIS9Fj0QvQVD0EA9HX0FQ8h8eQVD0FQ9BAPRF9CX0j0JfQQD0EA9DX0EA9I9F9CpfSPSPQQD0EA9A9I9Bf0j0EA9BKl9EX0X0X0X0X0EPDAEAAQABAgICAgACAAEBAQADAAEABAAFAAoBAAIAg2kAAAAAAEUAcQB1AGEAdABpAG8AbgAgAE4AYQB0AGkAdgBlAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAIA////////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAP4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP///////////////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
+      var cfb = CFB.read(oleB64, { type: 'base64' });
+      var workbook = CFB.find(cfb, 'Equation Native');
+      var eqData = workbook.content.slice(28);
+      console.log(eqData);
+
+      /**
+       * @param binData 
+       * @param tmpl 一个Array，用来表示数据结构 e.g. [uint8,uint8,string,...]
+       * @return Array
+       */
+      function parseBin(binData, tmpl) {
+         let result = [];
+         for (let chunk of tmpl) {
+            result.push(chunk(binData));
+         }
+         return result;
+      }
+
+
+      function uint8(binData) {
+         let chunk = binData.shift()
+         return parseInt(chunk)
+      }
+
+      function stringz(binData) {
+         let result = []
+         do {
+            let chunk = binData.shift();
+            if(!chunk) break;
+            result.push(chunk)
+         } while (binData)
+         return String.fromCharCode(...result);
+      }
+
+      
+      function record_end(binData) {
+         return ""
+      }
+      function record_line(binData) {
+         return ""
+      }
+      function record_char(binData) {
+         return ""
+      }
+      function record_tmpl(binData) {
+         return ""
+      }
+      function record_pile(binData) {
+         return ""
+      }
+      function record_matrix(binData) {
+         return ""
+      }
+      function record_embell(binData) {
+         return ""
+      }
+      function record_ruler(binData) {
+         return ""
+      }
+      function record_font_style_def(binData) {
+         return ""
+      }
+      function record_size(binData) {
+         return ""
+      }
+      function record_full(binData) {
+         return ""
+      }
+      function record_sub(binData) {
+         return ""
+      }
+      function record_sub2(binData) {
+         return ""
+      }
+      function record_sym(binData) {
+         return ""
+      }
+      function record_subsym(binData) {
+         return ""
+      }
+      function record_color(binData) {
+         return ""
+      }
+      function record_color_def(binData) {
+         return ""
+      }
+      function record_font_def(binData) {
+         let [enc_def_index, font_name] = parseBin(binData, [uint8, stringz]);
+         return {enc_def_index, font_name}
+      }
+      function record_eqn_prefs(binData) {
+         return ""
+      }
+      function record_future(binData) {
+         return ""
+      }
+      function record_encoding_def(binData) {
+         return stringz(binData)
+      }
+      let payloadChoice = {
+         1: record_line,
+         2: record_char,
+         3: record_tmpl,
+         0: record_end,
+         4: record_pile,
+         5: record_matrix,
+         6: record_embell,
+         7: record_ruler,
+         8: record_font_style_def,
+         9: record_size,
+         10: record_full,
+         11: record_sub,
+         12: record_sub2,
+         13: record_sym,
+         14: record_subsym,
+         15: record_color,
+         16: record_color_def,
+         17: record_font_def,
+         18: record_eqn_prefs,
+         19: record_encoding_def,
+         100: record_future,
+      };
+      function namedRecordParser(binData) {
+         let record_type = uint8(binData);
+         console.log(record_type)
+         let payload = payloadChoice[record_type](binData);
+         return { record_type, payload };
+      }
+
+      function namedRecordArray(binData) {
+         let result = []
+         do {
+            var namedRecord = namedRecordParser(binData);
+            console.log(namedRecord)
+            if (namedRecord.record_type === 0)
+               break;
+            result.push(namedRecord)
+         } while (binData)
+         return result;
+      }
+
+
+      let [mtef_version, platform, product, product_version, product_subversion, application_key, _equation_options, equation]
+         = parseBin(eqData, [uint8, uint8, uint8, uint8, uint8, stringz, uint8, namedRecordArray])
+
+      var equation_options = _equation_options === 1 ? "inline" : "block";
+
+      console.log([mtef_version, platform, product, product_version, product_subversion, application_key, _equation_options, equation])
+
+   </script>
+</body>
+
+</html>

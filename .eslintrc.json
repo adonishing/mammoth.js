@@ -6,6 +6,7 @@
     "dot-location": ["error", "property"],
     "no-alert": ["error"],
     "no-caller": ["error"],
+    "no-console": "off",
     "no-eval": ["error"],
     "no-extend-native": ["error"],
     "no-extra-bind": ["error"],

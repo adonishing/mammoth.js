@@ -1,3 +1,8 @@
+/* eslint-env browser */
+/* global mammoth :true */
+/* global MathJax :true */
+/* global getMathMl :true */
+
 var file;
 document.getElementById("document")
     .addEventListener("change", handleFileSelect, false);
@@ -8,7 +13,7 @@ document.getElementById("convert")
 function reconvert() {
     var reader = new FileReader();
 
-    reader.onload = function (loadEvent) {
+    reader.onload = function(loadEvent) {
         var arrayBuffer = loadEvent.target.result;
         convert(arrayBuffer);
     };
@@ -18,10 +23,10 @@ function reconvert() {
 function convert(arrayBuffer) {
     var options = {};
     var optStr = document.getElementById("options").value.trim();
-    console.log('optStr', optStr);
     if (optStr) {
         options = JSON.parse(optStr);
     }
+    
     mammoth.convertToHtml({arrayBuffer: arrayBuffer}, options)
         .then(displayResult)
         .done();
@@ -33,7 +38,7 @@ function handleFileSelect(event) {
 function displayResult(result) {
     document.getElementById("output").innerHTML = result.value;
 
-    var messageHtml = result.messages.map(function (message) {
+    var messageHtml = result.messages.map(function(message) {
         return '<li class="' + message.type + '">' + escapeHtml(message.message) + "</li>";
     }).join("");
 
@@ -45,7 +50,7 @@ function readFileInputEventAsArrayBuffer(event, callback) {
 
     var reader = new FileReader();
 
-    reader.onload = function (loadEvent) {
+    reader.onload = function(loadEvent) {
         var arrayBuffer = loadEvent.target.result;
         callback(arrayBuffer);
     };
@@ -59,4 +64,16 @@ function escapeHtml(value) {
         .replace(/"/g, '&quot;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
+}
+
+/**
+ *  未处理的omml公式放在一个img元素里，元素的onload会调用该函数。
+ *  @param ommlImg 存放omml的img元素
+ */
+function showOneFormula(ommlImg) {
+    var ommlXml = ommlImg.getAttribute('omath');
+    var mathMlEle = getMathMl(ommlXml);
+    var parent = ommlImg.parentElement;
+    parent.replaceChild(mathMlEle, ommlImg);
+    MathJax.Hub.Queue(["Typeset", MathJax.Hub, parent]);
 }

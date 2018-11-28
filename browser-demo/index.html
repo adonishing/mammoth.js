@@ -5,14 +5,25 @@
   <meta charset="utf-8">
   <title>Mammoth</title>
   <link rel="stylesheet" type="text/css" href="style.css">
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        showMathMenu: false,
+        extensions: ["mml2jax.js"],
+        jax: ["input/MathML","output/HTML-CSS","output/NativeMML"],
+        messageStyle: "none"
+      });
+</script>
+  <script type="text/javascript" src="https://resource.jiandan100.cn/mathjax/MathJax.js"></script>
+  
 </head>
 
 <body>
+  <div id="container"></div>
   <div class="container">
     <div class="well">
       <div>输入style map:</div>
 
-      <textarea id="options" cols=64 rows=16>{"styleMap": ["b => em"]}</textarea>
+      <textarea id="options" cols=64 rows=16>{"styleMap": ["u => u"]}</textarea>
       <button id="convert">convert</button>
     </div>
 
@@ -29,7 +40,8 @@
       </div>
     </div>
   </div>
-  <script src="../mammoth.browser.js"></script>
+  <script src="mammoth.browser.js"></script>
+  <script src="json2xml.js"></script>
   <script src="demo.js"></script>
 </body>
 
