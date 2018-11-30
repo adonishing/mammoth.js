@@ -1281,12 +1281,12 @@ function BodyReader(options) {
 
         var graphicData = element
             .getElementsByTagName("a:graphic")
-            .getElementsByTagName("a:graphicData")
+            .getElementsByTagName("a:graphicData");
 
-        var wpg = graphicData.getElementsByTagName("wpg:wgp")
+        var wpg = graphicData.getElementsByTagName("wpg:wgp");
         
-        if(wpg[0] && wpg[0].type === 'element'){
-            graphicData = wpg
+        if (wpg[0] && wpg[0].type === 'element'){
+            graphicData = wpg;
         }
         
         var blips = graphicData
