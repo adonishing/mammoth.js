@@ -482,17 +482,17 @@ function DocumentConversion(options, comments) {
         /**
          * 修改：
          * 用于将oMath元素的信息放到一个img元素，等加载完后由onload函数处理。
-         * 主要信息在element.content中，由mammoth的document元素转成的json 
+         * 主要信息在element.content中，由mammoth的document元素转成的json
          * @param {*} element 在readOmml中生成的对象
          * @param {*} messages 可能存在的警告信息，现在并没有
-         * @param {*} options 
+         * @param {*} options
          * @return html元素
          */
-        "oMath": function(element, messages, options) { 
+        "oMath": function(element, messages, options) {
             var attributes = {
                 src: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABUAAAAVCAYAAACpF6WWAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAElSURBVDhP7ZN9DYQwDMWxgAYs4AEJaMACDnCAAxSgAAMYwAEedvktvF03tgvJ5f67lzSDrn3t+lG5H+BPmsdxHG4YBlfXtauqyp/8oxemafJ3iEWWdFmWQIbjtm1Bh4i46zpvw2lxI933PUSHyEJ3fd+78zyDHUEtbqSK3rbtpYmh+3me/ZlmCSJSmyVOOYhMsq7rdfNGRGod0icJ6GXTNM2ljRGRjuMYHMi6BNnQxBwiUtUL+QTZlF5TJKW7OTBOssnVE0SkdphLWdi6P3q+dShlQXNkw7zmEJHakWIlUxCUEulFj7oPbF3tBJA5K4qOTZONysTkaH1vpDhp7xGCsF18a21pomw4uUfU3BspgJh6iZjvtHH8q76Uyk5LlvRb/IDUuReTzbnJqDLZsAAAAABJRU5ErkJggg==",
-                oMath: element.content, 
-                id: element.id, 'class':'omath', 
+                oMath: element.content,
+                id: element.id, 'class': 'omath',
                 onload: "showOneFormula(this)"
             };
             return [Html.nonFreshElement("img", attributes)];
@@ -747,12 +747,14 @@ function noteKey(noteType, id) {
     return noteType + "-" + id;
 }
 
+// 修改：增加额外信息extData以方便增加信息
 function Image(options) {
     return {
         type: types.image,
         read: options.readImage,
         altText: options.altText,
-        contentType: options.contentType
+        contentType: options.contentType,
+        extOptions: options.extOptions
     };
 }
 
@@ -1009,7 +1011,7 @@ function BodyReader(options) {
 
     var xmlElementReaders = {
         "w:p": function(element) {
-            var p =  readXmlElements(element.children)
+            var p = readXmlElements(element.children)
                 .map(function(children) {
                     var properties = _.find(children, isParagraphProperties);
                     return new documents.Paragraph(
@@ -1036,12 +1038,10 @@ function BodyReader(options) {
 
                 var numFmt = p.value.numbering.numFmt;
                 var lvlText = p.value.numbering.lvlText;
-                // console.log(i, start)
 
                 var txt = NUM_TEXT[numFmt][numIdx];
                 var formatTxt = lvlText.replace('%1', txt);
                 var numEle = documents.Text(formatTxt);
-                // console.log(oneValue);
                 var numRun = documents.Run([numEle], p.value.children[0]);
                 p.value.children.unshift(numRun);
 
@@ -1050,7 +1050,6 @@ function BodyReader(options) {
                 p.value.styleId = null;
 
             }
-            // console.log(p);
 
             return p;
         },
@@ -1279,9 +1278,18 @@ function BodyReader(options) {
     }
 
     function readDrawingElement(element) {
-        var blips = element
+
+        var graphicData = element
             .getElementsByTagName("a:graphic")
             .getElementsByTagName("a:graphicData")
+
+        var wpg = graphicData.getElementsByTagName("wpg:wgp")
+        
+        if(wpg[0] && wpg[0].type === 'element'){
+            graphicData = wpg
+        }
+        
+        var blips = graphicData
             .getElementsByTagName("pic:pic")
             .getElementsByTagName("pic:blipFill")
             .getElementsByTagName("a:blip");
@@ -1290,9 +1298,10 @@ function BodyReader(options) {
     }
     
     function readBlip(element, blip) {
+        var xy = element.first("wp:extent").attributes;
         var properties = element.first("wp:docPr").attributes;
         var altText = isBlank(properties.descr) ? properties.title : properties.descr;
-        return readImage(findBlipImageFile(blip), altText);
+        return readImage(findBlipImageFile(blip), altText, xy);
     }
     
     function isBlank(value) {
@@ -1371,13 +1380,14 @@ function BodyReader(options) {
         };
     }
     
-    function readImage(imageFile, altText) {
+    function readImage(imageFile, altText, extOptions) {
         var contentType = contentTypes.findContentType(imageFile.path);
         
         var image = documents.Image({
             readImage: imageFile.read,
             altText: altText,
-            contentType: contentType
+            contentType: contentType,
+            extOptions: extOptions
         });
         var warnings = supportedImageTypes[contentType] ?
             [] : warning("Image of type " + contentType + " is unlikely to display in web browsers");
@@ -1966,7 +1976,8 @@ var xmlNamespaceMap = {
     "http://schemas.openxmlformats.org/markup-compatibility/2006": "mc",
     "urn:schemas-microsoft-com:office:word": "office-word",
     "http://schemas.openxmlformats.org/officeDocument/2006/math": "m",  // 修改： 增加了 wprd 07 omml element
-    "urn:schemas-microsoft-com:office:office": "o"  // 修改： 增加了 word 97 mathtype binary file
+    "urn:schemas-microsoft-com:office:office": "o",  // 修改： 增加了 word 97 mathtype binary file
+    "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup": "wpg"  // 修改： 增加了 wpg
 };
 
 
@@ -1997,7 +2008,8 @@ function stripUtf8Bom(xmlString) {
 function collapseAlternateContent(node) {
     if (node.type === "element") {
         if (node.name === "mc:AlternateContent") {
-            return node.first("mc:Fallback").children;
+            // console.log(node.first("mc:Choice").children)
+            return node.first("mc:Choice").children;
         } else {
             node.children = _.flatten(node.children.map(collapseAlternateContent, true));
             return [node];
@@ -2418,9 +2430,14 @@ exports.inline = exports.imgElement;
 
 exports.dataUri = imgElement(function(element) {
     return element.read("base64").then(function(imageBuffer) {
-        return {
-            src: "data:" + element.contentType + ";base64," + imageBuffer
+        var imgAttr = {
+            src: "data:" + element.contentType + ";base64," + imageBuffer,
         };
+        if (element.extOptions){ // 修改：将额外信息里的cx, cy放到图片属性中
+            imgAttr.width = (parseInt(element.extOptions.cx) / 10000).toString();
+            imgAttr.height = (parseInt(element.extOptions.cy) / 10000).toString();
+        }
+        return imgAttr
     });
 });
 
