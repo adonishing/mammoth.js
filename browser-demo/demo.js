@@ -26,7 +26,24 @@ function convert(arrayBuffer) {
     if (optStr) {
         options = JSON.parse(optStr);
     }
-    
+    options.convertImage = mammoth.images.imgElement(function(image) {
+        console.log(image);
+        if (image.extOptions.onload === "converOle(this)"){
+            return image.read("base64").then(function(imageBuffer) {
+                return {
+                    src: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABUAAAAVCAYAAACpF6WWAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAElSURBVDhP7ZN9DYQwDMWxgAYs4AEJaMACDnCAAxSgAAMYwAEedvktvF03tgvJ5f67lzSDrn3t+lG5H+BPmsdxHG4YBlfXtauqyp/8oxemafJ3iEWWdFmWQIbjtm1Bh4i46zpvw2lxI933PUSHyEJ3fd+78zyDHUEtbqSK3rbtpYmh+3me/ZlmCSJSmyVOOYhMsq7rdfNGRGod0icJ6GXTNM2ljRGRjuMYHMi6BNnQxBwiUtUL+QTZlF5TJKW7OTBOssnVE0SkdphLWdi6P3q+dShlQXNkw7zmEJHakWIlUxCUEulFj7oPbF3tBJA5K4qOTZONysTkaH1vpDhp7xGCsF18a21pomw4uUfU3BspgJh6iZjvtHH8q76Uyk5LlvRb/IDUuReTzbnJqDLZsAAAAABJRU5ErkJggg==",
+                    oleb64: imageBuffer,
+                    id: image.extOptions.id,
+                    onload: "converOle(this)"
+                };
+            });
+        }
+        return image.read("base64").then(function(imageBuffer) {
+            var imgOption = image.extOptions;
+            imgOption.src = "data:" + image.contentType + ";base64," + imageBuffer
+            return imgOption;
+        });
+    });
     mammoth.convertToHtml({arrayBuffer: arrayBuffer}, options)
         .then(displayResult)
         .done();

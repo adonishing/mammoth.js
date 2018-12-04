@@ -1048,7 +1048,6 @@ function BodyReader(options) {
                 p.value.numbering = null;
                 p.value.styleName = null;
                 p.value.styleId = null;
-
             }
 
             return p;
@@ -1278,7 +1277,6 @@ function BodyReader(options) {
     }
 
     function readDrawingElement(element) {
-
         var graphicData = element
             .getElementsByTagName("a:graphic")
             .getElementsByTagName("a:graphicData");
@@ -1299,9 +1297,13 @@ function BodyReader(options) {
     
     function readBlip(element, blip) {
         var xy = element.first("wp:extent").attributes;
+        var extOptions = {
+            width: (parseInt(xy.cx) / 10000).toString(),
+            height: (parseInt(xy.cy) / 10000).toString()
+        };
         var properties = element.first("wp:docPr").attributes;
         var altText = isBlank(properties.descr) ? properties.title : properties.descr;
-        return readImage(findBlipImageFile(blip), altText, xy);
+        return readImage(findBlipImageFile(blip), altText, extOptions);
     }
     
     function isBlank(value) {
@@ -1341,7 +1343,12 @@ function BodyReader(options) {
         if (relationshipId) {
             return readImage(
                 findEmbeddedImageFile(relationshipId),
-                element.attributes["o:title"]);
+                element.attributes["o:title"],
+                {
+                    onload: "converOle(this)",
+                    id: "ole_" + relationshipId
+                }
+                );
         } else {
             return emptyResultWithMessages([warning("A v:imagedata element without a relationship ID was ignored")]);
         }
@@ -2008,7 +2015,6 @@ function stripUtf8Bom(xmlString) {
 function collapseAlternateContent(node) {
     if (node.type === "element") {
         if (node.name === "mc:AlternateContent") {
-            // console.log(node.first("mc:Choice").children)
             return node.first("mc:Choice").children;
         } else {
             node.children = _.flatten(node.children.map(collapseAlternateContent, true));
@@ -2431,13 +2437,13 @@ exports.inline = exports.imgElement;
 exports.dataUri = imgElement(function(element) {
     return element.read("base64").then(function(imageBuffer) {
         var imgAttr = {
-            src: "data:" + element.contentType + ";base64," + imageBuffer,
+            src: "data:" + element.contentType + ";base64," + imageBuffer
         };
-        if (element.extOptions){ // 修改：将额外信息里的cx, cy放到图片属性中
-            imgAttr.width = (parseInt(element.extOptions.cx) / 10000).toString();
-            imgAttr.height = (parseInt(element.extOptions.cy) / 10000).toString();
+        _.extendOwn(imgAttr, element.extOptions);
+        if (element.extOptions.hasOwnProperty('oleB64')){
+            imgAttr.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABUAAAAVCAYAAACpF6WWAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAElSURBVDhP7ZN9DYQwDMWxgAYs4AEJaMACDnCAAxSgAAMYwAEedvktvF03tgvJ5f67lzSDrn3t+lG5H+BPmsdxHG4YBlfXtauqyp/8oxemafJ3iEWWdFmWQIbjtm1Bh4i46zpvw2lxI933PUSHyEJ3fd+78zyDHUEtbqSK3rbtpYmh+3me/ZlmCSJSmyVOOYhMsq7rdfNGRGod0icJ6GXTNM2ljRGRjuMYHMi6BNnQxBwiUtUL+QTZlF5TJKW7OTBOssnVE0SkdphLWdi6P3q+dShlQXNkw7zmEJHakWIlUxCUEulFj7oPbF3tBJA5K4qOTZONysTkaH1vpDhp7xGCsF18a21pomw4uUfU3BspgJh6iZjvtHH8q76Uyk5LlvRb/IDUuReTzbnJqDLZsAAAAABJRU5ErkJggg==";
         }
-        return imgAttr
+        return imgAttr;
     });
 });
 
