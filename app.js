@@ -25,7 +25,6 @@ function ole2mml(id, b64){
 }
 
 router.post('/ole2mml',async (ctx, next)=>{
-    
     ctx.body = await ole2mml(ctx.request.query.id, ctx.request.body);
     ctx.type = 'text/xml';
 })

@@ -24,14 +24,6 @@ function converOle(oleElement){
             let parent = oleElement.parentElement;
             parent.replaceChild(mathMlEle, oleElement);
             MathJax.Hub.Queue(["Typeset", MathJax.Hub, parent]);
-            // if (document.implementation && document.implementation.createDocument) {
-            //     let oleXsltProcessor = new XSLTProcessor();
-            //     oleXsltProcessor.importStylesheet(oleXsl);
-            //     console.log(oleXsltProcessor)
-            //     let mathMlEle = oleXsltProcessor.transformToFragment(oleXml, document);
-            //     console.log(mathMlEle);
-                
-            // }
         }
     };
     xhr.send(oleB64);
