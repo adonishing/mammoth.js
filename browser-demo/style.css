@@ -54,3 +54,7 @@ body {
 .messages .warning {
     color: #cc6600;
 }
+
+p { 
+    white-space: pre-wrap; 
+}
