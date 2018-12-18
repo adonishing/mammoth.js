@@ -15,7 +15,6 @@ function converOle(oleElement){
             let mathMlEle = xhr.responseXML.childNodes[0];
             console.log(oleId);
 
-            console.log();
             if(mathMlEle.getAttribute('display') === 'block'){
                 mathMlEle.setAttribute('display', 'inline')
             }else if(mathMlEle.getAttribute('display') === 'inline'){

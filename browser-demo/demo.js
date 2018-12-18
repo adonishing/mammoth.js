@@ -27,7 +27,7 @@ function convert(arrayBuffer) {
         options = JSON.parse(optStr);
     }
     options.convertImage = mammoth.images.imgElement(function(image) {
-        console.log(image);
+        // console.log(image);
         if (image.extOptions.onload === "converOle(this)"){
             return image.read("base64").then(function(imageBuffer) {
                 return {
