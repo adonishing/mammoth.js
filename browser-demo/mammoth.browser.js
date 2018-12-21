@@ -1330,7 +1330,9 @@ function BodyReader(options) {
         if (relationshipId) {
             return readImage(
                 findEmbeddedImageFile(relationshipId),
-                element.attributes["o:title"]);
+                element.attributes["o:title"],
+                {rid: relationshipId}
+            );
         } else {
             return emptyResultWithMessages([warning("A v:imagedata element without a relationship ID was ignored")]);
         }
@@ -1340,6 +1342,9 @@ function BodyReader(options) {
     function readOLEData(element) {
         var relationshipId = element.attributes['r:id'];
         
+        if (!element.attributes['ProgID'].startsWith('Equation')){
+            return emptyResultWithMessages([warning("A non-Equation Ole element was ignored")]);
+        }
         if (relationshipId) {
             return readImage(
                 findEmbeddedImageFile(relationshipId),
