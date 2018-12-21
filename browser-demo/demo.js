@@ -27,7 +27,6 @@ function convert(arrayBuffer) {
         options = JSON.parse(optStr);
     }
     options.convertImage = mammoth.images.imgElement(function(image) {
-        // console.log(image);
         if (image.extOptions.onload === "converOle(this)"){
             return image.read("base64").then(function(imageBuffer) {
                 return {
@@ -38,10 +37,14 @@ function convert(arrayBuffer) {
                 };
             });
         }
+        
         return image.read("base64").then(function(imageBuffer) {
-            var imgOption = image.extOptions;
-            imgOption.src = "data:" + image.contentType + ";base64," + imageBuffer
-            return imgOption;
+            var imgAttr = {
+                src: "data:" + image.contentType + ";base64," + imageBuffer
+            };
+            Object.assign(imgAttr, image.extOptions);
+
+            return imgAttr;
         });
     });
     mammoth.convertToHtml({arrayBuffer: arrayBuffer}, options)
