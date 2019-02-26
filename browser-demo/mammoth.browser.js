@@ -125,18 +125,18 @@ exports.DocumentConverter = DocumentConverter;
 
 function DocumentConverter(options) {
     return {
-        convertToHtml: function(element) {
+        convertToHtml: function(element, mmlCallback) {
             var comments = _.indexBy(
                 element.type === documents.types.document ? element.comments : [],
                 "commentId"
             );
-            var conversion = new DocumentConversion(options, comments);
+            var conversion = new DocumentConversion(options, comments, mmlCallback);
             return conversion.convertToHtml(element);
         }
     };
 }
 
-function DocumentConversion(options, comments) {
+function DocumentConversion(options, comments, mmlCallback) {
     var noteNumber = 1;
     
     var noteReferences = [];
@@ -457,6 +457,24 @@ function DocumentConversion(options, comments) {
         ];
     }
 
+    function wrapChidrenInMathElement(xmlNodes) {
+        var elements = [];
+        xmlNodes.forEach(function (node) {
+            var child = null;
+            if (node.childNodes) {
+                child = wrapChidrenInMathElement(node.childNodes);
+            }
+            if (node.nodeType == 3) {
+                elements.push(Html.text(node.nodeValue));
+            } else {
+                elements.push(Html.freshElement(node.localName, {}, child));
+            }
+
+        });
+
+        return elements;
+    }
+
     var elementConverters = {
         "document": function(document, messages, options) {
             var children = convertElements(document.children, messages, options);
@@ -486,16 +504,14 @@ function DocumentConversion(options, comments) {
          * @param {*} element 在readOmml中生成的对象
          * @param {*} messages 可能存在的警告信息，现在并没有
          * @param {*} options
-         * @return html元素
+         * @return []
          */
         "oMath": function(element, messages, options) {
-            var attributes = {
-                src: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABUAAAAVCAYAAACpF6WWAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAElSURBVDhP7ZN9DYQwDMWxgAYs4AEJaMACDnCAAxSgAAMYwAEedvktvF03tgvJ5f67lzSDrn3t+lG5H+BPmsdxHG4YBlfXtauqyp/8oxemafJ3iEWWdFmWQIbjtm1Bh4i46zpvw2lxI933PUSHyEJ3fd+78zyDHUEtbqSK3rbtpYmh+3me/ZlmCSJSmyVOOYhMsq7rdfNGRGod0icJ6GXTNM2ljRGRjuMYHMi6BNnQxBwiUtUL+QTZlF5TJKW7OTBOssnVE0SkdphLWdi6P3q+dShlQXNkw7zmEJHakWIlUxCUEulFj7oPbF3tBJA5K4qOTZONysTkaH1vpDhp7xGCsF18a21pomw4uUfU3BspgJh6iZjvtHH8q76Uyk5LlvRb/IDUuReTzbnJqDLZsAAAAABJRU5ErkJggg==",
-                oMath: element.content,
-                id: element.id, 'class': 'omath',
-                onload: "showOneFormula(this)"
-            };
-            return [Html.nonFreshElement("img", attributes)];
+            var mathMlEle = mmlCallback(element.content);
+
+            var children = wrapChidrenInMathElement(mathMlEle.documentElement.childNodes);
+
+            return [Html.freshElement("math", {}, children)];
         },
         "hyperlink": function(element, messages, options) {
             var href = element.anchor ? "#" + htmlId(element.anchor) : element.href;
@@ -584,6 +600,7 @@ function walkHtml(nodes, callback) {
 var commentAuthorLabel = exports.commentAuthorLabel = function commentAuthorLabel(comment) {
     return comment.authorInitials || "";
 };
+
 
 },{"./documents":4,"./html":18,"./images":20,"./promises":23,"./results":24,"./styles/html-paths":27,"./writers":32,"underscore":153}],4:[function(require,module,exports){
 var _ = require("underscore");
@@ -2473,8 +2490,8 @@ exports.underline = require("./underline");
 exports.embedStyleMap = embedStyleMap;
 exports.readEmbeddedStyleMap = readEmbeddedStyleMap;
 
-function convertToHtml(input, options) {
-    return convert(input, options);
+function convertToHtml(input, options, mmlCallback) {
+    return convert(input, options, mmlCallback);
 }
 
 function convertToMarkdown(input, options) {
@@ -2483,7 +2500,7 @@ function convertToMarkdown(input, options) {
     return convert(input, markdownOptions);
 }
 
-function convert(input, options) {
+function convert(input, options, mmlCallback) {
     options = readOptions(options);
     
     return unzip.openZip(input)
@@ -2498,7 +2515,7 @@ function convert(input, options) {
                     return documentResult.map(options.transformDocument);
                 })
                 .then(function(documentResult) {
-                    return convertDocumentToHtml(documentResult, options);
+                    return convertDocumentToHtml(documentResult, options, mmlCallback);
                 });
         });
 }
@@ -2508,7 +2525,7 @@ function readEmbeddedStyleMap(input) {
         .then(docxStyleMap.readStyleMap);
 }
 
-function convertDocumentToHtml(documentResult, options) {
+function convertDocumentToHtml(documentResult, options, mmlCallback) {
     var styleMapResult = parseStyleMap(options.readStyleMap());
     var parsedOptions = _.extend({}, options, {
         styleMap: styleMapResult.value
@@ -2517,7 +2534,7 @@ function convertDocumentToHtml(documentResult, options) {
     
     return documentResult.flatMapThen(function(document) {
         return styleMapResult.flatMapThen(function(styleMap) {
-            return documentConverter.convertToHtml(document);
+            return documentConverter.convertToHtml(document, mmlCallback);
         });
     });
 }

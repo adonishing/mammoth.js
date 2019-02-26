@@ -36,9 +36,12 @@ function getFormulaXml(jsonStr){
     function json2xml(json, parent) {
         var thisEle = xml.createElement(json.name);
         if (json.attributes) {
-            Object.entries(json.attributes).forEach(function(ele) {
-                thisEle.setAttribute(ele[0], ele[1]);
-            });
+            for (var ele in json.attributes) {
+                thisEle.setAttribute(ele, json.attributes[ele]);
+            }
+        //    Object.entries(json.attributes).forEach(function(ele) {
+        //        thisEle.setAttribute(ele[0], ele[1]);
+        //    });
         }
     
         if (json.type === 'text') {
@@ -78,7 +81,7 @@ function getMathMl(Ommlxml){
         var xsltProcessor = new XSLTProcessor();
         xsltProcessor.importStylesheet(xsl);
     
-        var resultDocument = xsltProcessor.transformToFragment(xml, document);
+        var resultDocument = xsltProcessor.transformToDocument(xml);
         return resultDocument;
     }
 }
